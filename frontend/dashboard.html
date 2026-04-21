@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — ResumeX</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="page-wrap">
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/analyzer" class="nav-link">Analyzer</a>
+      <a href="/jobs" class="nav-link">Jobs</a>
+      <a href="/dashboard" class="nav-link active">Dashboard</a>
+      <a href="/profile" class="nav-link">Profile</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+      <a href="/analyzer" class="nav-btn-fill" style="text-decoration:none">+ Analyze Resume</a>
+      <div class="nav-avatar-wrap">
+        <button class="nav-avatar-btn" id="nav-av" onclick="toggleDD()"></button>
+        <div class="nav-dropdown" id="nav-dd">
+          <div class="dd-header"><div class="dd-name" id="nav-name-lbl"></div><div class="dd-email" id="nav-email-lbl"></div></div>
+          <a href="/profile" class="dd-item">👤 Profile</a>
+          <a href="/analyzer" class="dd-item">⚡ Analyzer</a>
+          <div class="divider"></div>
+          <div class="dd-item red" data-logout>🚪 Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header fu">
+    <div class="page-eyebrow">Your Account</div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-sub">Track your resume analyses, job applications, and career progress.</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid fu2">
+    <div class="stat-card">
+      <div class="stat-lbl">📊 Total Analyses</div>
+      <div class="stat-val" id="s-count">—</div>
+      <div class="stat-sub">Resume uploads</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">🏆 Best Score</div>
+      <div class="stat-val" id="s-best">—</div>
+      <div class="stat-sub">Highest match</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">📈 Avg Score</div>
+      <div class="stat-val" id="s-avg">—</div>
+      <div class="stat-sub">Across all analyses</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">💼 Applications</div>
+      <div class="stat-val" id="s-apps">—</div>
+      <div class="stat-sub">Jobs tracked</div>
+    </div>
+  </div>
+
+  <!-- Application Tracker -->
+  <div class="card card-glow fu3">
+    <div class="card-header">
+      <div class="card-title"><div class="card-icon">🎯</div>Job Application Tracker</div>
+      <button class="btn btn-outline btn-sm" onclick="openAddModal()">+ Add Application</button>
+    </div>
+    <div id="tracker-wrap">
+      <div class="empty"><div class="empty-ico">💼</div>No applications yet.<br><a href="/analyzer" style="color:var(--teal);font-weight:600">Analyze a resume first →</a></div>
+    </div>
+  </div>
+
+  <!-- Analysis History -->
+  <div class="card fu3">
+    <div class="section-hd">
+      <div class="section-ttl">Analysis History</div>
+      <a href="/analyzer" class="btn btn-outline btn-sm">+ New Analysis</a>
+    </div>
+    <div id="history-wrap"><div class="empty"><div class="empty-ico">📋</div>Loading...</div></div>
+  </div>
+
+  <!-- Detail Panel -->
+  <div class="card card-glow hidden" id="detail-panel">
+    <div class="card-header">
+      <div class="card-title"><div class="card-icon">📊</div><span id="dp-title">Detail</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('detail-panel').classList.add('hidden')">✕ Close</button>
+    </div>
+    <div class="result-hero">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex-shrink:0">
+        <div id="dp-ring"></div>
+        <div id="dp-bar" style="width:130px"></div>
+        <div id="dp-ats"></div>
+      </div>
+      <div class="result-body">
+        <div class="result-summary" id="dp-summary"></div>
+        <div class="skill-panels">
+          <div class="skill-panel"><div class="skill-panel-label">✅ Your Skills</div><div id="dp-resume"></div></div>
+          <div class="skill-panel"><div class="skill-panel-label">🎯 Required</div><div id="dp-job"></div></div>
+        </div>
+        <div class="missing-panel"><div class="skill-panel-label" style="color:var(--danger)">⚠️ Skills to Learn</div><div id="dp-missing"></div></div>
+        <div class="ai-insights-box hidden" id="dp-insights">
+          <div class="ai-tag">🤖 AI Insights</div>
+          <div id="dp-strengths"></div>
+          <div id="dp-improvements" style="margin-top:10px"></div>
+          <div id="dp-ats-tips" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Application Modal -->
+<div id="add-modal" class="hidden" style="position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(6px)">
+  <div class="card" style="max-width:480px;width:calc(100% - 2rem);margin:0 1rem">
+    <div class="card-header">
+      <div class="card-title">📌 Track New Application</div>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Company</label><input class="form-input" id="m-company" placeholder="e.g. Google"></div>
+      <div class="form-group"><label class="form-label">Role</label><input class="form-input" id="m-role" placeholder="e.g. SDE-1"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Status</label>
+        <select class="form-input" id="m-status">
+          <option>Applied</option><option>Interview</option><option>Selected</option><option>Rejected</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Match Score (%)</label>
+        <input class="form-input" id="m-score" type="number" min="0" max="100" placeholder="0–100">
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label><input class="form-input" id="m-notes" placeholder="Interview date, contact, notes..."></div>
+    <div id="modal-alert"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="addApplication()">Save Application</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div><a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a><p class="footer-desc">AI resume analysis and job tracking platform.</p></div>
+    <div class="footer-col"><h4>Navigate</h4><a href="/analyzer">Analyzer</a><a href="/jobs">Jobs</a><a href="/dashboard">Dashboard</a><a href="/profile">Profile</a></div>
+    <div class="footer-col"><h4>Stack</h4><a href="#">FastAPI</a><a href="#">Gemini AI</a><a href="#">SQLAlchemy</a></div>
+    <div class="footer-col"><h4>Account</h4><a href="/profile">Profile</a><span style="display:block;font-size:13px;color:var(--text3);cursor:pointer" data-logout>Logout</span></div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2025 ResumeX</p>
+    <div class="tech-pills"><span class="tech-pill">FastAPI</span><span class="tech-pill">Gemini AI</span><span class="tech-pill">Python</span><span class="tech-pill">SQLite</span></div>
+  </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+if (!AUTH.ok) window.location.href = "/login";
+
+let _analyses = [], _apps = [];
+const STATUS_COLORS = { Applied:"applied", Interview:"interview", Selected:"selected", Rejected:"rejected" };
+
+async function loadAll() {
+  const [an, ap] = await Promise.allSettled([
+    apiFetch("/api/my-analyses"),
+    apiFetch("/api/job-history")
+  ]);
+  if (an.status === "fulfilled") { _analyses = an.value; renderHistory(); }
+  if (ap.status === "fulfilled") { _apps = ap.value; renderTracker(); }
+  updateStats();
+}
+
+function updateStats() {
+  const scores = _analyses.map(a => a.match_score);
+  const avg = scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : 0;
+  document.getElementById("s-count").textContent = _analyses.length;
+  document.getElementById("s-best").textContent  = scores.length ? Math.max(...scores).toFixed(1) + "%" : "N/A";
+  document.getElementById("s-avg").textContent   = scores.length ? avg.toFixed(1) + "%" : "N/A";
+  document.getElementById("s-apps").textContent  = _apps.length;
+}
+
+function renderTracker() {
+  const w = document.getElementById("tracker-wrap");
+  if (!_apps.length) {
+    w.innerHTML = `<div class="empty"><div class="empty-ico">🎯</div>No applications tracked yet.<br><a href="/analyzer" style="color:var(--teal);font-weight:600">Analyze a resume →</a></div>`;
+    return;
+  }
+  w.innerHTML = `<div style="overflow-x:auto">
+  <table class="tracker-table">
+    <thead><tr><th>#</th><th>Company</th><th>Role</th><th>Match</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+    <tbody>
+      ${_apps.map((a, i) => `
+        <tr id="row-${a.id}">
+          <td style="color:var(--text3)">${i+1}</td>
+          <td style="font-weight:700">${a.company}</td>
+          <td style="color:var(--text2)">${a.role}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:5px;background:var(--surface2);border-radius:3px;min-width:60px">
+                <div style="height:100%;width:${Math.min(a.match_score||0,100)}%;background:${sColor(a.match_score||0)};border-radius:3px"></div>
+              </div>
+              <span style="font-size:13px;font-weight:700;color:${sColor(a.match_score||0)}">${(a.match_score||0).toFixed(0)}%</span>
+            </div>
+          </td>
+          <td>
+            <select class="status-badge status-${STATUS_COLORS[a.status]||'applied'}"
+              onchange="updateStatus(${a.id},this.value,this)" style="cursor:pointer;border:none">
+              ${["Applied","Interview","Selected","Rejected"].map(s =>
+                `<option ${a.status===s?"selected":""}>${s}</option>`).join("")}
+            </select>
+          </td>
+          <td style="color:var(--text3);font-size:12px">
+            ${new Date(a.applied_at).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}
+          </td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-danger btn-sm" onclick="deleteApp(${a.id})">🗑</button>
+          </td>
+        </tr>`).join("")}
+    </tbody>
+  </table></div>`;
+}
+
+function renderHistory() {
+  const w = document.getElementById("history-wrap");
+  if (!_analyses.length) {
+    w.innerHTML = `<div class="empty"><div class="empty-ico">📄</div>No analyses yet.<br><a href="/analyzer" style="color:var(--teal);font-weight:600">Upload your first resume →</a></div>`;
+    return;
+  }
+  w.innerHTML = _analyses.map((a, i) => {
+    const c = sColor(a.match_score);
+    return `<div class="history-row" onclick="showDetail(${i})">
+      <div style="width:52px;height:52px;border-radius:50%;border:2px solid ${c};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:var(--font-head);font-size:12px;font-weight:800;color:${c}">${Math.round(a.match_score)}%</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="history-fname">
+          ${a.resume_filename}
+          ${a.ai_powered ? '<span class="ai-tag" style="font-size:10px;padding:2px 8px;margin-left:6px">🤖 AI</span>' : ""}
+        </div>
+        <div class="history-date">${new Date(a.created_at).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;color:var(--text3)">ATS: ${Math.round(a.ats_score || 0)}%</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0">View →</button>
+    </div>`;
+  }).join("");
+}
+
+function showDetail(i) {
+  const a = _analyses[i];
+  const p = document.getElementById("detail-panel");
+  p.classList.remove("hidden");
+
+  document.getElementById("dp-title").textContent = a.resume_filename;
+  renderRing(a.match_score, document.getElementById("dp-ring"));
+  renderBar(a.match_score, document.getElementById("dp-bar"));
+
+  if (a.ats_score) {
+    document.getElementById("dp-ats").innerHTML = `
+      <div style="text-align:center;padding:8px 14px;background:var(--surface);border-radius:var(--r)">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.08em">ATS Score</div>
+        <div style="font-family:var(--font-head);font-size:18px;font-weight:800;color:${sColor(a.ats_score)}">${Math.round(a.ats_score)}%</div>
+      </div>`;
+  }
+
+  document.getElementById("dp-summary").textContent = a.ai_summary || "Analysis complete.";
+  document.getElementById("dp-resume").innerHTML  = chips(a.resume_skills,  "chip-teal");
+  document.getElementById("dp-job").innerHTML     = chips(a.job_skills,     "chip-blue");
+  document.getElementById("dp-missing").innerHTML = chips(a.missing_skills, "chip-red");
+
+  if (a.ai_powered && (a.strengths?.length || a.improvements?.length)) {
+    document.getElementById("dp-insights").classList.remove("hidden");
+    const mk = (items, cls, label) => items?.length ?
+      `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text2);margin-bottom:8px">${label}</div>` +
+      items.map(s => `<div class="insight-item"><div class="i-dot ${cls}"></div><span>${s}</span></div>`).join("") : "";
+    document.getElementById("dp-strengths").innerHTML   = mk(a.strengths,   "d-green", "💪 Strengths");
+    document.getElementById("dp-improvements").innerHTML= mk(a.improvements, "d-blue",  "📈 Improvements");
+    document.getElementById("dp-ats-tips").innerHTML    = mk(a.ats_tips,    "d-warn",  "💡 ATS Tips");
+  } else {
+    document.getElementById("dp-insights").classList.add("hidden");
+  }
+
+  p.scrollIntoView({ behavior: "smooth" });
+}
+
+async function updateStatus(id, status, sel) {
+  try {
+    const form = new FormData(); form.append("status", status);
+    await apiFetch(`/api/update-status/${id}`, { method: "PUT", body: form });
+    sel.className = `status-badge status-${STATUS_COLORS[status]||"applied"}`;
+    toast(`Status → ${status} ✅`);
+  } catch(e) { toast(e.message, "err"); }
+}
+
+async function deleteApp(id) {
+  if (!confirm("Remove this application?")) return;
+  try {
+    await apiFetch(`/api/job-history/${id}`, { method: "DELETE" });
+    _apps = _apps.filter(a => a.id !== id);
+    renderTracker(); updateStats();
+    toast("Application removed");
+  } catch(e) { toast(e.message, "err"); }
+}
+
+function openAddModal() { document.getElementById("add-modal").classList.remove("hidden"); }
+function closeModal() { document.getElementById("add-modal").classList.add("hidden"); document.getElementById("modal-alert").innerHTML = ""; }
+
+async function addApplication() {
+  const company = document.getElementById("m-company").value.trim();
+  const role    = document.getElementById("m-role").value.trim();
+  const status  = document.getElementById("m-status").value;
+  const score   = parseFloat(document.getElementById("m-score").value) || 0;
+  const notes   = document.getElementById("m-notes").value.trim();
+  if (!company || !role) {
+    document.getElementById("modal-alert").innerHTML = '<div class="alert alert-error">Fill in company and role.</div>';
+    return;
+  }
+  const form = new FormData();
+  form.append("company", company); form.append("role", role);
+  form.append("status", status); form.append("match_score", score);
+  form.append("notes", notes);
+  try {
+    await apiFetch("/api/apply-job", { method: "POST", body: form });
+    closeModal(); toast("Application saved! 🎉");
+    loadAll();
+  } catch(e) {
+    document.getElementById("modal-alert").innerHTML = `<div class="alert alert-error">${e.message}</div>`;
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>

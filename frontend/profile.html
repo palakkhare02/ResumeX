@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — ResumeX</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="page-wrap">
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/analyzer" class="nav-link">Analyzer</a>
+      <a href="/jobs" class="nav-link">Jobs</a>
+      <a href="/dashboard" class="nav-link">Dashboard</a>
+      <a href="/profile" class="nav-link active">Profile</a>
+    </div>
+    <div style="margin-left:auto">
+      <div class="nav-avatar-wrap">
+        <button class="nav-avatar-btn" id="nav-av" onclick="toggleDD()"></button>
+        <div class="nav-dropdown" id="nav-dd">
+          <div class="dd-header"><div class="dd-name" id="nav-name-lbl"></div><div class="dd-email" id="nav-email-lbl"></div></div>
+          <a href="/dashboard" class="dd-item">📊 Dashboard</a>
+          <a href="/analyzer" class="dd-item">⚡ Analyzer</a>
+          <div class="divider"></div>
+          <div class="dd-item red" data-logout>🚪 Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header fu">
+    <div class="page-eyebrow">Account</div>
+    <div class="page-title">My Profile</div>
+    <div class="page-sub">Manage your skills, view stats, and track your progress.</div>
+  </div>
+
+  <div class="profile-grid fu2">
+    <!-- Left Column -->
+    <div>
+      <div class="card" style="text-align:center">
+        <div class="profile-avatar" id="p-av">?</div>
+        <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:var(--text);margin-bottom:4px" id="p-name">—</div>
+        <div style="font-size:14px;color:var(--text2);margin-bottom:1.25rem" id="p-email">—</div>
+        <div class="divider"></div>
+        <div class="grid-2" style="gap:.75rem;margin-top:1.25rem">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:1rem">
+            <div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--teal)" id="p-count">0</div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Analyses</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:1rem">
+            <div style="font-family:var(--font-head);font-size:28px;font-weight:800;color:var(--blue)" id="p-best">0%</div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Best Score</div>
+          </div>
+        </div>
+        <div class="divider" style="margin:1.25rem 0"></div>
+        <div style="text-align:left">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Member Since</div>
+          <div style="font-size:14px;color:var(--text);font-weight:600" id="p-joined">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom:1.25rem"><div class="card-icon">⚡</div>Quick Actions</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a href="/analyzer" class="btn btn-primary btn-sm" style="justify-content:center">⚡ Analyze Resume</a>
+          <a href="/jobs" class="btn btn-secondary btn-sm" style="justify-content:center">💼 Browse Jobs</a>
+          <a href="/dashboard" class="btn btn-outline btn-sm" style="justify-content:center">📊 Dashboard</a>
+          <button class="btn btn-danger btn-sm" style="justify-content:center" data-logout>🚪 Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div>
+      <div class="card card-glow">
+        <div class="card-header">
+          <div class="card-title"><div class="card-icon">🛠</div>My Skills</div>
+        </div>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+          Skills are automatically extracted from your latest resume. You can also add or edit them manually.
+        </p>
+        <div class="chips" id="p-skills-disp" style="margin-bottom:1rem;min-height:36px">
+          <span style="color:var(--text3);font-size:13px">Upload a resume to auto-extract skills →</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Edit Skills (comma separated)</label>
+          <input class="form-input" id="p-skills-inp" placeholder="python, fastapi, react, sql, machine learning...">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSkills()">💾 Save Skills</button>
+      </div>
+
+      <div class="card">
+        <div class="section-hd">
+          <div class="section-ttl">Recent Analyses</div>
+          <a href="/analyzer" class="btn btn-outline btn-sm">+ New →</a>
+        </div>
+        <div id="p-recent">
+          <div class="empty" style="padding:1.5rem"><div class="empty-ico">📄</div>No analyses yet.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-hd">
+          <div class="section-ttl">Saved Jobs</div>
+          <a href="/jobs" class="btn btn-outline btn-sm">Browse →</a>
+        </div>
+        <div id="p-saved">
+          <div class="empty" style="padding:1.5rem"><div class="empty-ico">🔖</div>No saved jobs.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div><a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a><p class="footer-desc">AI-powered resume analysis platform.</p></div>
+    <div class="footer-col"><h4>Navigate</h4><a href="/analyzer">Analyzer</a><a href="/jobs">Jobs</a><a href="/dashboard">Dashboard</a></div>
+    <div class="footer-col"><h4>Stack</h4><a href="#">FastAPI</a><a href="#">Gemini AI</a><a href="#">SQLite</a></div>
+    <div class="footer-col"><h4>Account</h4><a href="/profile">Profile</a><span style="display:block;font-size:13px;color:var(--text3);cursor:pointer" data-logout>Logout</span></div>
+  </div>
+  <div class="footer-bottom"><p class="footer-copy">© 2025 ResumeX</p><div class="tech-pills"><span class="tech-pill">FastAPI</span><span class="tech-pill">Gemini AI</span></div></div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+if (!AUTH.ok) window.location.href = "/login";
+
+async function load() {
+  try {
+    const u = await apiFetch("/api/me");
+    document.getElementById("p-av").textContent    = u.username[0].toUpperCase();
+    document.getElementById("p-name").textContent  = u.username;
+    document.getElementById("p-email").textContent = u.email;
+    document.getElementById("p-count").textContent = u.total_analyses;
+    document.getElementById("p-best").textContent  = u.best_score + "%";
+    document.getElementById("p-joined").textContent = new Date(u.joined).toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" });
+
+    const sk = u.skills || [];
+    document.getElementById("p-skills-disp").innerHTML = sk.length
+      ? sk.map(s => `<span class="chip chip-teal">${s}</span>`).join("")
+      : '<span style="color:var(--text3);font-size:13px">Upload a resume to auto-extract skills →</span>';
+    document.getElementById("p-skills-inp").value = sk.join(", ");
+  } catch(e) { console.error("Me error:", e); }
+
+  try {
+    const an = await apiFetch("/api/my-analyses");
+    if (an.length) {
+      document.getElementById("p-recent").innerHTML = an.slice(0, 5).map(a => {
+        const c = sColor(a.match_score);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <span style="font-family:var(--font-head);font-size:13px;font-weight:800;color:${c};background:${c}18;padding:4px 12px;border-radius:20px;border:1px solid ${c}40;flex-shrink:0">${Math.round(a.match_score)}%</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.resume_filename}</div>
+            <div style="font-size:12px;color:var(--text3)">${new Date(a.created_at).toLocaleDateString("en-IN")}</div>
+          </div>
+          ${a.ai_powered ? '<span class="ai-tag" style="font-size:10px;padding:2px 8px;flex-shrink:0">🤖</span>' : ""}
+        </div>`;
+      }).join("");
+    }
+  } catch(e) {}
+
+  try {
+    const sv = await apiFetch("/api/saved-jobs");
+    if (sv.length) {
+      document.getElementById("p-saved").innerHTML = sv.map(j => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💼</div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${j.title}</div>
+            <div style="font-size:12px;color:var(--text2)">${j.company} · ${j.location}</div>
+          </div>
+          <a href="/jobs" class="btn btn-outline btn-sm" style="margin-left:auto">View →</a>
+        </div>`).join("");
+    }
+  } catch(e) {}
+}
+
+async function saveSkills() {
+  const val = document.getElementById("p-skills-inp").value.trim();
+  const form = new FormData(); form.append("skills", val);
+  try {
+    const r = await apiFetch("/api/profile/skills", { method: "POST", body: form });
+    document.getElementById("p-skills-disp").innerHTML = r.skills.length
+      ? r.skills.map(s => `<span class="chip chip-teal">${s}</span>`).join("")
+      : '<span style="color:var(--text3);font-size:13px">No skills saved.</span>';
+    toast("Skills saved! 💾");
+  } catch(e) { toast(e.message, "err"); }
+}
+
+load();
+</script>
+</body>
+</html>

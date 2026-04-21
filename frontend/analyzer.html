@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume Analyzer — ResumeX</title>
+<link rel="stylesheet" href="/static/css/app.css">
+<style>
+/* ── Analyzer-specific styles ── */
+.analyzer-tabs { display:flex; gap:8px; margin-bottom:2rem; flex-wrap:wrap; }
+.a-tab {
+  padding:9px 22px; border-radius:10px; font-size:14px; font-weight:600;
+  border:1px solid var(--border2); background:transparent; color:var(--text2);
+  cursor:pointer; transition:all 0.2s; font-family:var(--font);
+}
+.a-tab.on { background:var(--surface2); border-color:var(--teal); color:var(--teal); }
+.panel { display:none; }
+.panel.on { display:block; }
+
+/* Score Breakdown */
+.score-breakdown {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin:1.5rem 0;
+}
+.breakdown-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--r); padding:1rem; text-align:center;
+}
+.breakdown-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text3); margin-bottom:8px; }
+.breakdown-val   { font-family:var(--font-head); font-size:28px; font-weight:800; line-height:1; }
+.breakdown-sub   { font-size:11px; color:var(--text3); margin-top:4px; }
+.breakdown-bar   { height:4px; background:var(--surface2); border-radius:2px; margin-top:8px; overflow:hidden; }
+.breakdown-fill  { height:100%; border-radius:2px; transition:width 1s ease; }
+
+/* Why Score Box */
+.why-score-box {
+  background:rgba(167,139,250,0.08); border:1px solid rgba(167,139,250,0.2);
+  border-radius:var(--r); padding:14px 16px; margin-top:1rem;
+}
+.why-score-box .label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--purple); margin-bottom:6px; }
+.why-score-box p { font-size:13px; color:var(--text2); line-height:1.6; }
+
+/* Multi JD */
+.multi-jd-row { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; }
+.multi-jd-row .form-input { flex:1; }
+
+/* Matched skills */
+.matched-panel {
+  background:rgba(0,212,170,0.06); border:1px solid rgba(0,212,170,0.15);
+  border-radius:var(--r); padding:14px; margin-bottom:1rem;
+}
+</style>
+</head>
+<body class="page-wrap">
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/analyzer" class="nav-link active">Analyzer</a>
+      <a href="/jobs" class="nav-link">Jobs</a>
+      <a href="/dashboard" class="nav-link auth-show hidden">Dashboard</a>
+      <a href="/profile" class="nav-link auth-show hidden">Profile</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+      <a href="/login" class="nav-btn-outline guest-show">Log In</a>
+      <a href="/login?tab=register" class="nav-btn-fill guest-show">Sign Up</a>
+      <div class="nav-avatar-wrap auth-show hidden">
+        <button class="nav-avatar-btn" id="nav-av" onclick="toggleDD()"></button>
+        <div class="nav-dropdown" id="nav-dd">
+          <div class="dd-header"><div class="dd-name" id="nav-name-lbl"></div><div class="dd-email" id="nav-email-lbl"></div></div>
+          <a href="/dashboard" class="dd-item">📊 Dashboard</a>
+          <a href="/profile" class="dd-item">👤 Profile</a>
+          <div class="divider"></div>
+          <div class="dd-item red" data-logout>🚪 Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header fu">
+    <div class="page-eyebrow">⚡ Hybrid AI Engine</div>
+    <div class="page-title">Resume Analyzer</div>
+    <div class="page-sub">Semantic matching + Skill analysis + Experience scoring — not just keywords.</div>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="analyzer-tabs fu2">
+    <button class="a-tab on" id="tab-single" onclick="switchTab('single')">📄 Single Resume</button>
+    <button class="a-tab" id="tab-multi"  onclick="switchTab('multi')">📊 Multi-Resume Compare</button>
+  </div>
+
+  <!-- ══ SINGLE ANALYSIS ══════════════════════════════════════════════════ -->
+  <div id="panel-single" class="panel on">
+
+    <div class="card card-glow fu2">
+      <div class="card-header">
+        <div class="card-title"><div class="card-icon">📄</div>Upload Resume</div>
+        <span id="engine-badge" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+
+      <!-- Drop Zone -->
+      <div id="drop-zone" class="upload-zone">
+        <span class="upload-icon">📄</span>
+        <div class="upload-title">Drop your PDF resume here</div>
+        <div class="upload-sub"><strong>Click to browse</strong> or drag & drop</div>
+        <div class="upload-badge">PDF only · Max 10MB</div>
+        <input type="file" id="file-input" accept=".pdf" style="display:none">
+      </div>
+      <div id="file-status"></div>
+
+      <!-- Job Description -->
+      <div class="form-group" style="margin-top:1.5rem">
+        <label class="form-label">
+          Job Description
+          <span style="color:var(--text3);font-weight:400;text-transform:none">(paste full JD for best results)</span>
+        </label>
+        <textarea class="form-input" id="jd" rows="7"
+          placeholder="Paste the complete job description here — include responsibilities, required skills, qualifications, and preferred experience.
+
+The more detail you provide, the more accurate the hybrid AI scoring."></textarea>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px" id="jd-count"></div>
+      </div>
+
+      <div id="alert-box"></div>
+
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <button class="btn btn-primary" id="analyze-btn" onclick="runAnalysis()">
+          ⚡ Analyze Resume
+        </button>
+        <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+        <div id="engine-status" style="font-size:12px;color:var(--text3)"></div>
+      </div>
+    </div>
+
+    <!-- ── RESULT ── -->
+    <div class="card card-glow hidden" id="result-card">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-icon">📊</div>
+          Analysis Result
+          <span id="ai-badge-slot"></span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('result-card').classList.add('hidden')">✕</button>
+      </div>
+
+      <!-- Main score + breakdown -->
+      <div class="result-hero">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0">
+          <div id="score-ring-el"></div>
+          <div id="score-bar-el" style="width:140px"></div>
+          <!-- ATS Score -->
+          <div id="ats-display"></div>
+        </div>
+
+        <div class="result-body">
+          <!-- Summary -->
+          <div class="result-summary" id="r-summary"></div>
+
+          <!-- Score Breakdown -->
+          <div class="score-breakdown" id="score-breakdown"></div>
+
+          <!-- Why this score -->
+          <div class="why-score-box hidden" id="why-score">
+            <div class="label">🔍 Why this score?</div>
+            <p id="why-score-text"></p>
+          </div>
+
+          <!-- Skills -->
+          <div class="skill-panels">
+            <div class="skill-panel">
+              <div class="skill-panel-label">✅ Your Skills</div>
+              <div id="r-resume-skills"></div>
+            </div>
+            <div class="skill-panel">
+              <div class="skill-panel-label">🎯 Required Skills</div>
+              <div id="r-job-skills"></div>
+            </div>
+          </div>
+
+          <!-- Matched Skills -->
+          <div class="matched-panel hidden" id="r-matched-wrap">
+            <div class="skill-panel-label" style="color:var(--teal)">🤝 Matched Skills</div>
+            <div id="r-matched"></div>
+          </div>
+
+          <!-- Missing Skills -->
+          <div class="missing-panel">
+            <div class="skill-panel-label" style="color:var(--danger)">⚠️ Skills to Learn</div>
+            <div id="r-missing"></div>
+          </div>
+
+          <!-- AI Insights -->
+          <div class="ai-insights-box hidden" id="r-insights">
+            <div class="ai-tag">🤖 AI Insights</div>
+            <div id="r-strengths"></div>
+            <div id="r-improvements" style="margin-top:10px"></div>
+            <div id="r-ats" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(79,142,247,0.15)"></div>
+          </div>
+
+          <!-- Local Insights (no-AI fallback) -->
+          <div class="ai-insights-box hidden" id="r-local-insights"
+               style="background:rgba(0,212,170,0.05);border-color:rgba(0,212,170,0.2)">
+            <div class="ai-tag" style="background:var(--teal-dim);border-color:rgba(0,212,170,0.3);color:var(--teal)">📊 Smart Analysis</div>
+            <div id="r-local-strengths"></div>
+            <div id="r-local-improvements" style="margin-top:10px"></div>
+            <div id="r-local-ats" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(0,212,170,0.15)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Apply -->
+      <div class="hidden" id="quick-apply-section"
+           style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600">
+          📌 Track this application:
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input class="form-input" id="apply-company" placeholder="Company name"
+                 style="flex:1;min-width:150px;max-width:230px">
+          <input class="form-input" id="apply-role" placeholder="Role / Position"
+                 style="flex:1;min-width:150px;max-width:230px">
+          <button class="btn btn-primary btn-sm" onclick="quickApply()">Save to Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MULTI COMPARE ════════════════════════════════════════════════════ -->
+  <div id="panel-multi" class="panel">
+    <div class="card card-glow">
+      <div class="card-header">
+        <div class="card-title"><div class="card-icon">📊</div>Multi-Resume Comparison</div>
+      </div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:1.5rem;line-height:1.6">
+        Upload up to 5 resumes and compare them against multiple job descriptions simultaneously.
+        Each cell shows the hybrid AI score.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Upload Resumes (up to 5 PDFs)</label>
+        <div id="multi-drop" class="upload-zone" style="padding:1.75rem">
+          <span class="upload-icon" style="font-size:2rem">📂</span>
+          <div class="upload-title" style="font-size:15px">Drop multiple PDFs or click to browse</div>
+          <input type="file" id="multi-files" accept=".pdf" multiple style="display:none">
+        </div>
+        <div id="multi-file-list" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <label class="form-label" style="margin:0">Job Descriptions (up to 3)</label>
+          <button class="btn btn-outline btn-sm" onclick="addJD()">+ Add JD</button>
+        </div>
+        <div id="jd-list">
+          <div class="multi-jd-row">
+            <input class="form-input" placeholder="JD Name (e.g. Google SWE)"
+                   style="max-width:200px;flex:0 0 200px">
+            <textarea class="form-input" rows="3" placeholder="Paste job description..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="multi-alert"></div>
+      <button class="btn btn-primary" id="multi-btn" onclick="runMulti()">⚡ Compare All Resumes</button>
+    </div>
+
+    <!-- Multi Results -->
+    <div class="card hidden" id="multi-result">
+      <div class="card-header">
+        <div class="card-title"><div class="card-icon">📊</div>Comparison Results</div>
+        <span style="font-size:12px;color:var(--text3)" id="multi-engine-label"></span>
+      </div>
+      <div id="multi-table-wrap" style="overflow-x:auto"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+      <p class="footer-desc">Production AI resume analysis with hybrid scoring.</p>
+    </div>
+    <div class="footer-col"><h4>Product</h4><a href="/">Home</a><a href="/jobs">Jobs</a><a href="/dashboard">Dashboard</a></div>
+    <div class="footer-col"><h4>Stack</h4><a href="#">FastAPI</a><a href="#">Gemini AI</a><a href="#">Sentence Transformers</a></div>
+    <div class="footer-col"><h4>Account</h4><a href="/login">Login</a><a href="/login?tab=register">Sign Up</a></div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2025 ResumeX</p>
+    <div class="tech-pills">
+      <span class="tech-pill">Hybrid Scoring</span>
+      <span class="tech-pill">Semantic AI</span>
+      <span class="tech-pill">ATS Engine</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+// ── Init ─────────────────────────────────────────────────────────────────────
+let file = null, lastScore = 0;
+
+// Show engine info
+fetch("/api/engine-info").then(r => r.json()).then(d => {
+  const badge = d.semantic_engine === "sentence-transformers"
+    ? '<span class="ai-tag" style="background:rgba(0,212,170,0.1);border-color:rgba(0,212,170,0.3);color:var(--teal)">🧠 Semantic AI</span>'
+    : '<span style="font-size:11px;color:var(--text3)">TF-IDF Mode</span>';
+  document.getElementById("engine-badge").innerHTML = badge;
+  document.getElementById("engine-status").textContent =
+    d.semantic_engine === "sentence-transformers"
+      ? "✓ Sentence Transformers loaded"
+      : "Using TF-IDF (pip install sentence-transformers for semantic AI)";
+}).catch(() => {});
+
+// Prefill JD from Jobs page
+const savedJD = localStorage.getItem("match_jd");
+if (savedJD) { document.getElementById("jd").value = savedJD; localStorage.removeItem("match_jd"); }
+
+// ── Drop Zone ────────────────────────────────────────────────────────────────
+const dz = document.getElementById("drop-zone");
+const fi = document.getElementById("file-input");
+dz.addEventListener("click", () => fi.click());
+fi.addEventListener("change", () => pick(fi.files[0]));
+dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("dragover"); pick(e.dataTransfer.files[0]); });
+
+function pick(f) {
+  if (!f) return;
+  if (!f.name.toLowerCase().endsWith(".pdf")) { showAlert("Only PDF files are supported.", "error"); return; }
+  file = f;
+  document.getElementById("file-status").innerHTML =
+    `<div class="file-selected">✅ <strong>${f.name}</strong> &nbsp;·&nbsp; ${(f.size/1024).toFixed(0)} KB</div>`;
+}
+
+document.getElementById("jd").addEventListener("input", function() {
+  document.getElementById("jd-count").textContent = `${this.value.length} characters`;
+});
+
+function showAlert(msg, type) {
+  document.getElementById("alert-box").innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+}
+
+function clearForm() {
+  file = null;
+  document.getElementById("file-status").innerHTML = "";
+  document.getElementById("jd").value = "";
+  document.getElementById("jd-count").textContent = "";
+  document.getElementById("alert-box").innerHTML = "";
+  document.getElementById("result-card").classList.add("hidden");
+}
+
+// ── Single Analysis ───────────────────────────────────────────────────────────
+async function runAnalysis() {
+  document.getElementById("alert-box").innerHTML = "";
+  if (!file) return showAlert("⚠️ Please select a PDF resume first.", "error");
+  if (!AUTH.ok) return showAlert('🔒 Please <a href="/login">log in</a> to analyze your resume.', "error");
+
+  const btn = document.getElementById("analyze-btn");
+  btn.innerHTML = '<span class="spin"></span> Analyzing...'; btn.disabled = true;
+
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("job_desc", document.getElementById("jd").value);
+    const data = await apiFetch("/api/analyze", { method: "POST", body: form });
+    showResult(data);
+    toast("Analysis complete! ✅");
+  } catch(e) {
+    showAlert("❌ " + e.message, "error");
+  } finally {
+    btn.innerHTML = "⚡ Analyze Resume"; btn.disabled = false;
+  }
+}
+
+function showResult(data) {
+  lastScore = data.match_score;
+  const card = document.getElementById("result-card");
+  card.classList.remove("hidden");
+
+  // Main ring + bar
+  renderRing(data.match_score, document.getElementById("score-ring-el"));
+  renderBar(data.match_score,  document.getElementById("score-bar-el"));
+
+  // ATS Score
+  const atsCls = sCls(data.ats_score || 0);
+  document.getElementById("ats-display").innerHTML = `
+    <div style="text-align:center;padding:8px 16px;background:var(--surface);border-radius:var(--r)">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px">ATS Score</div>
+      <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:${sColor(data.ats_score||0)}">${Math.round(data.ats_score||0)}%</div>
+    </div>`;
+
+  // AI Badge
+  document.getElementById("ai-badge-slot").innerHTML = data.ai_powered
+    ? '<span class="ai-tag" style="margin-left:8px;font-size:11px">🤖 Gemini AI</span>'
+    : `<span style="font-size:11px;color:var(--text3);margin-left:8px">${data.semantic_engine === "sentence-transformers" ? "🧠 Semantic" : "📊 Smart Analysis"}</span>`;
+
+  // Summary
+  document.getElementById("r-summary").textContent = data.summary || "Analysis complete.";
+
+  // Score Breakdown
+  const breakdowns = [
+    { label: "Semantic Match",   val: data.semantic_score || 0,   hint: "40% weight — content & context" },
+    { label: "Skill Match",      val: data.skill_score || 0,      hint: "30% weight — technical skills" },
+    { label: "Experience Match", val: data.experience_score || 0, hint: "30% weight — seniority & years" },
+  ];
+  document.getElementById("score-breakdown").innerHTML = breakdowns.map(b => {
+    const c = sColor(b.val);
+    return `<div class="breakdown-card">
+      <div class="breakdown-label">${b.label}</div>
+      <div class="breakdown-val" style="color:${c}">${Math.round(b.val)}%</div>
+      <div class="breakdown-sub">${b.hint}</div>
+      <div class="breakdown-bar">
+        <div class="breakdown-fill" style="width:0%;background:${c}" data-target="${b.val}"></div>
+      </div>
+    </div>`;
+  }).join("");
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll(".breakdown-fill").forEach(el => {
+      el.style.width = el.dataset.target + "%";
+    });
+  }, 100);
+
+  // Why this score
+  if (data.why_this_score) {
+    document.getElementById("why-score").classList.remove("hidden");
+    document.getElementById("why-score-text").textContent = data.why_this_score;
+  }
+
+  // Skills
+  document.getElementById("r-resume-skills").innerHTML = chips(data.resume_skills, "chip-teal");
+  document.getElementById("r-job-skills").innerHTML    = chips(data.job_skills,    "chip-blue");
+  document.getElementById("r-missing").innerHTML       = chips(data.missing_skills,"chip-red");
+
+  // Matched skills
+  if (data.matched_skills?.length) {
+    document.getElementById("r-matched-wrap").classList.remove("hidden");
+    document.getElementById("r-matched").innerHTML = chips(data.matched_skills, "chip-teal");
+  }
+
+  // AI Insights (Gemini)
+  if (data.ai_powered) {
+    document.getElementById("r-insights").classList.remove("hidden");
+    document.getElementById("r-local-insights").classList.add("hidden");
+    const mk = (items, dot, colorVar, label) => items?.length ? `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${colorVar};margin-bottom:8px">${label}</div>
+      ${items.map(s => `<div class="insight-item"><div class="i-dot ${dot}"></div><span>${s}</span></div>`).join("")}` : "";
+    document.getElementById("r-strengths").innerHTML    = mk(data.strengths,    "d-green","var(--teal)", "💪 Strengths");
+    document.getElementById("r-improvements").innerHTML = mk(data.improvements, "d-blue", "var(--blue)", "📈 Improvements");
+    document.getElementById("r-ats").innerHTML          = mk(data.ats_tips,     "d-warn", "var(--warn)", "💡 ATS Tips");
+  } else {
+    // Local smart analysis
+    document.getElementById("r-insights").classList.add("hidden");
+    document.getElementById("r-local-insights").classList.remove("hidden");
+    const mk2 = (items, dot, colorVar, label) => items?.length ? `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:${colorVar};margin-bottom:8px">${label}</div>
+      ${items.map(s => `<div class="insight-item"><div class="i-dot ${dot}"></div><span>${s}</span></div>`).join("")}` : "";
+    document.getElementById("r-local-strengths").innerHTML    = mk2(data.strengths,    "d-green","var(--teal)", "💪 Strengths");
+    document.getElementById("r-local-improvements").innerHTML = mk2(data.improvements, "d-blue", "var(--blue)", "📈 Improvements");
+    document.getElementById("r-local-ats").innerHTML          = mk2(data.ats_tips,     "d-warn", "var(--warn)", "💡 ATS Tips");
+  }
+
+  // Quick Apply
+  if (AUTH.ok) document.getElementById("quick-apply-section").classList.remove("hidden");
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function quickApply() {
+  const company = document.getElementById("apply-company").value.trim();
+  const role    = document.getElementById("apply-role").value.trim();
+  if (!company || !role) return toast("Enter company and role", "err");
+  const form = new FormData();
+  form.append("company", company); form.append("role", role); form.append("match_score", lastScore);
+  try {
+    await apiFetch("/api/apply-job", { method: "POST", body: form });
+    toast("✅ Application saved to dashboard!");
+    document.getElementById("apply-company").value = "";
+    document.getElementById("apply-role").value = "";
+  } catch(e) { toast(e.message, "err"); }
+}
+
+// ── Multi Analysis ────────────────────────────────────────────────────────────
+let multiFiles = [], jdCount = 1;
+
+const mdz = document.getElementById("multi-drop");
+const mfi = document.getElementById("multi-files");
+mdz.addEventListener("click", () => mfi.click());
+mdz.addEventListener("dragover",  e => { e.preventDefault(); mdz.classList.add("dragover"); });
+mdz.addEventListener("dragleave", () => mdz.classList.remove("dragover"));
+mdz.addEventListener("drop", e => { e.preventDefault(); mdz.classList.remove("dragover"); addFiles(e.dataTransfer.files); });
+mfi.addEventListener("change", () => addFiles(mfi.files));
+
+function addFiles(files) {
+  for (const f of files) {
+    if (f.name.toLowerCase().endsWith(".pdf") && multiFiles.length < 5) multiFiles.push(f);
+  }
+  renderFileList();
+}
+
+function renderFileList() {
+  document.getElementById("multi-file-list").innerHTML = multiFiles.map((f, i) =>
+    `<div class="file-selected" style="display:flex;align-items:center;gap:8px;flex:0 0 auto">
+      📄 <span>${f.name}</span>
+      <button onclick="multiFiles.splice(${i},1);renderFileList()"
+        style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px">×</button>
+    </div>`
+  ).join("");
+}
+
+function addJD() {
+  if (jdCount >= 3) return toast("Maximum 3 job descriptions", "err");
+  jdCount++;
+  const row = document.createElement("div");
+  row.className = "multi-jd-row";
+  row.innerHTML = `
+    <input class="form-input" placeholder="JD Name" style="max-width:200px;flex:0 0 200px">
+    <textarea class="form-input" rows="3" placeholder="Paste job description..."></textarea>
+    <button class="btn btn-ghost btn-sm" onclick="this.parentElement.remove();jdCount--" style="flex-shrink:0">✕</button>`;
+  document.getElementById("jd-list").appendChild(row);
+}
+
+async function runMulti() {
+  if (!AUTH.ok) {
+    document.getElementById("multi-alert").innerHTML = '<div class="alert alert-error">🔒 Please <a href="/login">log in</a> first.</div>';
+    return;
+  }
+  if (!multiFiles.length) {
+    document.getElementById("multi-alert").innerHTML = '<div class="alert alert-error">Upload at least one PDF resume.</div>';
+    return;
+  }
+  const rows = document.querySelectorAll("#jd-list .multi-jd-row");
+  const jdList = [];
+  rows.forEach(row => {
+    const name = row.querySelector("input").value.trim() || "Job";
+    const text = row.querySelector("textarea").value.trim();
+    if (text) jdList.push({ name, text });
+  });
+  if (!jdList.length) {
+    document.getElementById("multi-alert").innerHTML = '<div class="alert alert-error">Add at least one job description.</div>';
+    return;
+  }
+  const btn = document.getElementById("multi-btn");
+  btn.innerHTML = '<span class="spin"></span> Analyzing...'; btn.disabled = true;
+  document.getElementById("multi-alert").innerHTML = "";
+  try {
+    const form = new FormData();
+    multiFiles.forEach(f => form.append("files", f));
+    form.append("job_descs", JSON.stringify(jdList));
+    const data = await apiFetch("/api/analyze-multiple", { method: "POST", body: form });
+    renderMultiResult(data, jdList);
+    toast("Comparison done! ✅");
+  } catch(e) {
+    document.getElementById("multi-alert").innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  } finally {
+    btn.innerHTML = "⚡ Compare All Resumes"; btn.disabled = false;
+  }
+}
+
+function renderMultiResult(data, jdList) {
+  document.getElementById("multi-engine-label").textContent =
+    `Semantic engine: ${data.results[0]?.scores[0] ? "hybrid" : "tfidf"}`;
+
+  const thead = `<tr>
+    <th>Resume</th>
+    ${jdList.map(jd => `<th>${jd.name}</th>`).join("")}
+  </tr>`;
+
+  const tbody = data.results.map(row => `
+    <tr>
+      <td>${row.resume}</td>
+      ${row.scores.map(s => `
+        <td>
+          <div style="font-family:var(--font-head);font-size:22px;font-weight:800;color:${sColor(s.match_score)}">${Math.round(s.match_score)}%</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">
+            Sem: ${Math.round(s.semantic_score)}% &nbsp;|&nbsp;
+            Sk: ${Math.round(s.skill_score)}% &nbsp;|&nbsp;
+            Exp: ${Math.round(s.experience_score)}%
+          </div>
+          <div style="font-size:10px;color:var(--text3)">ATS: ${Math.round(s.ats_score)}%</div>
+          ${s.missing_skills?.length ? `<div style="font-size:11px;color:var(--danger);margin-top:4px">Missing: ${s.missing_skills.slice(0,2).join(", ")}</div>` : ""}
+          <div style="font-size:11px;color:${s.experience_match==='Good'?'var(--teal)':s.experience_match==='Partial'?'var(--warn)':'var(--danger)'}">${s.experience_match}</div>
+        </td>`).join("")}
+    </tr>`).join("");
+
+  document.getElementById("multi-table-wrap").innerHTML =
+    `<table class="compare-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  document.getElementById("multi-result").classList.remove("hidden");
+  document.getElementById("multi-result").scrollIntoView({ behavior: "smooth" });
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById("tab-single").classList.toggle("on", tab === "single");
+  document.getElementById("tab-multi").classList.toggle("on",  tab === "multi");
+  document.getElementById("panel-single").style.display = tab === "single" ? "block" : "none";
+  document.getElementById("panel-multi").style.display  = tab === "multi"  ? "block" : "none";
+}
+document.getElementById("panel-multi").style.display = "none";
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Jobs — ResumeX</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="page-wrap">
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/analyzer" class="nav-link">Analyzer</a>
+      <a href="/jobs" class="nav-link active">Jobs</a>
+      <a href="/dashboard" class="nav-link auth-show hidden">Dashboard</a>
+      <a href="/profile" class="nav-link auth-show hidden">Profile</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-left:auto">
+      <a href="/login" class="nav-btn-outline guest-show">Login</a>
+      <a href="/login?tab=register" class="nav-btn-fill guest-show">Sign Up</a>
+      <div class="nav-avatar-wrap auth-show hidden">
+        <button class="nav-avatar-btn" id="nav-av" onclick="toggleDD()"></button>
+        <div class="nav-dropdown" id="nav-dd">
+          <div class="dd-header"><div class="dd-name" id="nav-name-lbl"></div></div>
+          <a href="/analyzer" class="dd-item">⚡ Analyzer</a>
+          <a href="/dashboard" class="dd-item">📊 Dashboard</a>
+          <a href="/profile" class="dd-item">👤 Profile</a>
+          <div class="divider"></div>
+          <div class="dd-item red" data-logout>🚪 Logout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header fu">
+    <div class="page-eyebrow">💼 Job Board</div>
+    <div class="page-title">Browse Opportunities</div>
+    <div class="page-sub">Find roles that match your skills. Click "Match Resume" on any job to instantly run an AI analysis.</div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar fu2">
+    <input class="form-input filter-input" id="q" placeholder="🔍  Search jobs, companies, skills..." oninput="render()">
+    <button class="filter-pill on" data-t="" onclick="setT(this,'')">All</button>
+    <button class="filter-pill" data-t="Full-time" onclick="setT(this,'Full-time')">Full-time</button>
+    <button class="filter-pill" data-t="Part-time" onclick="setT(this,'Part-time')">Part-time</button>
+    <button class="filter-pill" data-t="Remote" onclick="setT(this,'Remote')">Remote</button>
+    <button class="filter-pill" data-t="Internship" onclick="setT(this,'Internship')">Internship</button>
+    <div style="margin-left:auto">
+      <button class="btn btn-outline btn-sm auth-show hidden" onclick="togglePost()">+ Post a Job</button>
+    </div>
+  </div>
+
+  <!-- Post Job Form -->
+  <div class="card card-glow hidden" id="post-form">
+    <div class="card-header">
+      <div class="card-title"><div class="card-icon">📝</div>Post a New Job</div>
+      <button class="btn btn-ghost btn-sm" onclick="togglePost()">✕ Close</button>
+    </div>
+    <div id="post-alert"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Job Title</label><input class="form-input" id="p-title" placeholder="e.g. Senior Python Developer"></div>
+      <div class="form-group"><label class="form-label">Company Name</label><input class="form-input" id="p-co" placeholder="e.g. TechCorp India"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Location</label><input class="form-input" id="p-loc" placeholder="e.g. Bangalore / Remote"></div>
+      <div class="form-group"><label class="form-label">Job Type</label>
+        <select class="form-input" id="p-type">
+          <option>Full-time</option><option>Part-time</option><option>Remote</option>
+          <option>Internship</option><option>Contract</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Salary Range (optional)</label><input class="form-input" id="p-salary" placeholder="e.g. ₹12-20 LPA or ₹25,000/month"></div>
+    <div class="form-group"><label class="form-label">Job Description</label><textarea class="form-input" id="p-desc" rows="6" placeholder="Full description with required skills, responsibilities, qualifications..."></textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="postJob()">Submit Job Listing</button>
+      <button class="btn btn-ghost" onclick="togglePost()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Job Count + Grid -->
+  <div class="section-hd fu3">
+    <div class="section-ttl" id="job-count-lbl">Loading jobs...</div>
+  </div>
+  <div class="jobs-grid" id="jobs-grid">
+    <div class="empty"><div class="empty-ico">💼</div>Loading...</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div><a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a><p class="footer-desc">Find jobs that perfectly match your skill set.</p></div>
+    <div class="footer-col"><h4>Product</h4><a href="/analyzer">Analyzer</a><a href="/jobs">Browse Jobs</a><a href="/dashboard">Dashboard</a></div>
+    <div class="footer-col"><h4>Account</h4><a href="/login">Login</a><a href="/login?tab=register">Sign Up</a></div>
+    <div class="footer-col"><h4>Stack</h4><a href="#">FastAPI</a><a href="#">Gemini AI</a><a href="#">SQLite</a></div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copy">© 2025 ResumeX</p>
+    <div class="tech-pills"><span class="tech-pill">FastAPI</span><span class="tech-pill">Gemini AI</span><span class="tech-pill">Python</span></div>
+  </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+let all = [], activeT = "";
+
+const JOB_ICONS = {
+  python:"🐍", java:"☕", react:"⚛️", node:"🟢", data:"📊", ml:"🤖",
+  design:"🎨", devops:"⚙️", cloud:"☁️", go:"🔵", frontend:"🖥️",
+  backend:"⚡", android:"🤖", ios:"🍎", flutter:"💙", figma:"🎨",
+};
+
+function getIcon(title) {
+  const t = title.toLowerCase();
+  return Object.entries(JOB_ICONS).find(([k]) => t.includes(k))?.[1] || "💼";
+}
+
+function timeAgo(iso) {
+  const d = new Date(iso), now = Date.now();
+  const diff = now - d.getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7)  return `${days}d ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
+async function load() {
+  try {
+    all = await apiFetch("/api/jobs");
+    render();
+  } catch(e) {
+    document.getElementById("jobs-grid").innerHTML = `<div class="empty"><div class="empty-ico">⚠️</div>${e.message}</div>`;
+  }
+}
+
+function render() {
+  const q = document.getElementById("q").value.toLowerCase();
+  const filtered = all.filter(j => {
+    const matchQ = !q || (j.title + j.company + j.description + (j.skills||[]).join(" ")).toLowerCase().includes(q);
+    const matchT  = !activeT || j.job_type === activeT || (activeT === "Remote" && j.location === "Remote");
+    return matchQ && matchT;
+  });
+
+  document.getElementById("job-count-lbl").textContent = `${filtered.length} Job${filtered.length !== 1 ? "s" : ""} Found`;
+
+  if (!filtered.length) {
+    document.getElementById("jobs-grid").innerHTML = '<div class="empty"><div class="empty-ico">🔍</div>No jobs match your search.<br><a href="/jobs" style="color:var(--teal)">Clear filters →</a></div>';
+    return;
+  }
+
+  document.getElementById("jobs-grid").innerHTML = filtered.map(j => {
+    const excerpt = j.description.replace(/\*\*/g,"").slice(0, 140) + "…";
+    const skills  = (j.skills || []).slice(0, 4);
+    const desc_esc = encodeURIComponent(j.description);
+    return `<div class="job-card" onclick="matchJob('${desc_esc}')">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div class="job-card-logo">${getIcon(j.title)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="job-card-title">${j.title}</div>
+          <div class="job-card-company">${j.company}</div>
+        </div>
+        ${j.salary ? `<div class="job-card-salary">${j.salary}</div>` : ""}
+      </div>
+      <div class="job-card-meta">
+        <span class="job-pill">📍 ${j.location || "Remote"}</span>
+        <span class="job-pill">⏱ ${j.job_type || "Full-time"}</span>
+        <span class="job-pill">🕐 ${timeAgo(j.created_at)}</span>
+      </div>
+      <div class="job-card-excerpt">${excerpt}</div>
+      ${skills.length ? `<div class="chips">${skills.map(s => `<span class="chip chip-gray">${s}</span>`).join("")}</div>` : ""}
+      <div class="job-card-actions">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="event.stopPropagation();matchJob('${desc_esc}')">⚡ Match Resume</button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();saveJ(${j.id},this)">🔖 Save</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function matchJob(encodedDesc) {
+  localStorage.setItem("match_jd", decodeURIComponent(encodedDesc));
+  window.location.href = "/analyzer";
+}
+
+function setT(el, t) {
+  activeT = t;
+  document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("on"));
+  el.classList.add("on");
+  render();
+}
+
+async function saveJ(id, btn) {
+  if (!AUTH.ok) return toast("Please log in first", "err");
+  try {
+    const r = await apiFetch(`/api/jobs/${id}/save`, { method: "POST" });
+    btn.textContent = r.saved ? "❤️ Saved" : "🔖 Save";
+    toast(r.saved ? "Job saved! ❤️" : "Job removed from saved");
+  } catch(e) { toast(e.message, "err"); }
+}
+
+function togglePost() {
+  const f = document.getElementById("post-form");
+  f.classList.toggle("hidden");
+  if (!f.classList.contains("hidden") && !AUTH.ok) {
+    document.getElementById("post-alert").innerHTML = '<div class="alert alert-error">🔒 Please <a href="/login">log in</a> to post a job.</div>';
+  }
+}
+
+async function postJob() {
+  if (!AUTH.ok) return;
+  const title = document.getElementById("p-title").value.trim();
+  const company = document.getElementById("p-co").value.trim();
+  const desc = document.getElementById("p-desc").value.trim();
+  if (!title || !company || !desc) {
+    document.getElementById("post-alert").innerHTML = '<div class="alert alert-error">Please fill in Title, Company, and Description.</div>';
+    return;
+  }
+  const form = new FormData();
+  form.append("title", title);
+  form.append("company", company);
+  form.append("description", desc);
+  form.append("location", document.getElementById("p-loc").value || "Remote");
+  form.append("job_type", document.getElementById("p-type").value);
+  form.append("salary", document.getElementById("p-salary").value);
+  try {
+    await apiFetch("/api/jobs", { method: "POST", body: form });
+    togglePost();
+    toast("Job posted! 🎉");
+    load();
+  } catch(e) {
+    document.getElementById("post-alert").innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pdfminer.six
+scikit-learn
+sqlalchemy
+bcrypt
+python-jose[cryptography]
+jinja2
+httpx
+sentence-transformers
+torch

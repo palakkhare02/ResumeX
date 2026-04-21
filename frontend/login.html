@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — ResumeX</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body class="page-wrap">
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><div class="nav-logo-mark">✦</div>Resume<em>X</em></a>
+    <div class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+      <a href="/jobs" class="nav-link">Jobs</a>
+      <a href="/analyzer" class="nav-link">Analyzer</a>
+    </div>
+    <div style="margin-left:auto"><a href="/login" class="nav-btn-fill">Login / Sign Up</a></div>
+  </div>
+</nav>
+
+<div class="auth-page">
+  <div class="auth-card fu">
+    <div class="auth-logo">
+      <a href="/" class="nav-logo" style="justify-content:center;font-size:24px">
+        <div class="nav-logo-mark" style="width:42px;height:42px;font-size:20px">✦</div>
+        Resume<em>X</em>
+      </a>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" id="tab-l" onclick="sw('login')">Log In</div>
+      <div class="tab" id="tab-r" onclick="sw('reg')">Sign Up</div>
+    </div>
+
+    <div id="alert"></div>
+
+    <!-- Login Form -->
+    <div id="frm-login">
+      <div class="auth-title">Welcome back 👋</div>
+      <div class="auth-sub">Sign in to your ResumeX account</div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="l-u" placeholder="your_username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="l-p" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:.5rem" onclick="doLogin()">Log In →</button>
+      <p style="text-align:center;margin-top:1.25rem;font-size:13px;color:var(--text2)">
+        Don't have an account?
+        <span onclick="sw('reg')" style="color:var(--teal);cursor:pointer;font-weight:700">Sign up free</span>
+      </p>
+    </div>
+
+    <!-- Register Form -->
+    <div id="frm-reg" class="hidden">
+      <div class="auth-title">Create your account 🚀</div>
+      <div class="auth-sub">Free forever · No credit card needed</div>
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-input" id="r-u" placeholder="choose_username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="r-e" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="r-p" placeholder="Min 6 characters" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:.5rem" onclick="doReg()">Create Account →</button>
+      <p style="text-align:center;margin-top:1.25rem;font-size:13px;color:var(--text2)">
+        Already have an account?
+        <span onclick="sw('login')" style="color:var(--teal);cursor:pointer;font-weight:700">Log in</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<footer style="margin-top:0">
+  <div class="footer-bottom" style="max-width:var(--max-w);margin:0 auto;padding:1.5rem;border-top:1px solid var(--border)">
+    <p class="footer-copy">© 2025 ResumeX</p>
+    <div class="tech-pills"><span class="tech-pill">JWT Auth</span><span class="tech-pill">bcrypt</span><span class="tech-pill">FastAPI</span></div>
+  </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+<script>
+if (AUTH.ok) window.location.href = "/dashboard";
+
+// Auto-select tab from URL
+if (new URLSearchParams(location.search).get("tab") === "register") sw("reg");
+
+function sw(t) {
+  document.getElementById("frm-login").classList.toggle("hidden", t !== "login");
+  document.getElementById("frm-reg").classList.toggle("hidden", t !== "reg");
+  document.getElementById("tab-l").classList.toggle("on", t === "login");
+  document.getElementById("tab-r").classList.toggle("on", t === "reg");
+  document.getElementById("alert").innerHTML = "";
+}
+
+function showErr(msg) {
+  document.getElementById("alert").innerHTML = `<div class="alert alert-error">${msg}</div>`;
+}
+
+async function doLogin() {
+  const u = document.getElementById("l-u").value.trim();
+  const p = document.getElementById("l-p").value;
+  if (!u || !p) return showErr("Please fill in all fields.");
+  try {
+    const body = new URLSearchParams({ username: u, password: p });
+    const r = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail);
+    AUTH.set(d.access_token, d.username, d.email || "");
+    window.location.href = "/dashboard";
+  } catch(e) {
+    showErr("❌ " + e.message);
+  }
+}
+
+async function doReg() {
+  const u = document.getElementById("r-u").value.trim();
+  const e = document.getElementById("r-e").value.trim();
+  const p = document.getElementById("r-p").value;
+  if (!u || !e || !p) return showErr("Please fill in all fields.");
+  if (p.length < 6) return showErr("Password must be at least 6 characters.");
+  const form = new FormData();
+  form.append("username", u); form.append("email", e); form.append("password", p);
+  try {
+    const r = await fetch("/api/register", { method: "POST", body: form });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail);
+    AUTH.set(d.access_token, d.username, d.email || e);
+    window.location.href = "/dashboard";
+  } catch(e) {
+    showErr("❌ " + e.message);
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    document.getElementById("tab-l").classList.contains("on") ? doLogin() : doReg();
+  }
+});
+</script>
+</body>
+</html>
